@@ -3,20 +3,25 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Journey AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: journeys
+    description: Goal-driven journeys (life plans)
+  - name: tasks
+    description: Tasks within phases
+  - name: coach
+    description: AI coach feedback
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +29,247 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /journeys:
+    get:
+      operationId: listJourneys
+      tags: [journeys]
+      summary: List all journeys
+      responses:
+        "200":
+          description: List of journey summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JourneySummary"
+    post:
+      operationId: createJourney
+      tags: [journeys]
+      summary: Create a new journey from a goal (AI-generated plan)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJourneyBody"
+      responses:
+        "201":
+          description: Created journey with phases and tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Journey"
+
+  /journeys/{id}:
+    get:
+      operationId: getJourney
+      tags: [journeys]
+      summary: Get a journey with its phases and tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Journey detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Journey"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateJourney
+      tags: [journeys]
+      summary: Update journey status or title
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateJourneyBody"
+      responses:
+        "200":
+          description: Updated journey
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Journey"
+    delete:
+      operationId: deleteJourney
+      tags: [journeys]
+      summary: Delete a journey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /journeys/{id}/summary:
+    get:
+      operationId: getJourneySummary
+      tags: [journeys]
+      summary: Aggregate progress stats for a journey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JourneyProgress"
+
+  /journeys/{id}/activity:
+    get:
+      operationId: getJourneyActivity
+      tags: [journeys]
+      summary: Recent task completion activity for a journey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of recent activity events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEvent"
+
+  /dashboard/overview:
+    get:
+      operationId: getDashboardOverview
+      tags: [journeys]
+      summary: Aggregate stats across all journeys
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardOverview"
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Toggle task completion or edit title
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskBody"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /phases/{id}/tasks:
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Add a custom task to a phase
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskBody"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /journeys/{id}/coach/messages:
+    get:
+      operationId: listCoachMessages
+      tags: [coach]
+      summary: List coach chat history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Coach messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CoachMessage"
+    post:
+      operationId: sendCoachMessage
+      tags: [coach]
+      summary: Send a message to the AI coach and get feedback
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendCoachMessageBody"
+      responses:
+        "200":
+          description: Coach reply (and the user message persisted)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoachReply"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +277,207 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    JourneyStatus:
+      type: string
+      enum: [active, paused, completed, archived]
+
+    Task:
+      type: object
+      properties:
+        id: { type: string }
+        phaseId: { type: string }
+        orderIndex: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        isCompleted: { type: boolean }
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+      required: [id, phaseId, orderIndex, title, description, isCompleted, completedAt]
+
+    Phase:
+      type: object
+      properties:
+        id: { type: string }
+        journeyId: { type: string }
+        orderIndex: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        estimatedDuration: { type: string }
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+      required: [id, journeyId, orderIndex, title, description, estimatedDuration, tasks]
+
+    Journey:
+      type: object
+      properties:
+        id: { type: string }
+        goalText: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        status:
+          $ref: "#/components/schemas/JourneyStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        phases:
+          type: array
+          items:
+            $ref: "#/components/schemas/Phase"
+      required: [id, goalText, title, summary, status, createdAt, updatedAt, phases]
+
+    JourneySummary:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        status:
+          $ref: "#/components/schemas/JourneyStatus"
+        createdAt:
+          type: string
+          format: date-time
+        totalTasks: { type: integer }
+        completedTasks: { type: integer }
+        progressPercent: { type: integer }
+        nextTaskTitle:
+          type: ["string", "null"]
+      required: [id, title, summary, status, createdAt, totalTasks, completedTasks, progressPercent, nextTaskTitle]
+
+    JourneyProgress:
+      type: object
+      properties:
+        journeyId: { type: string }
+        totalTasks: { type: integer }
+        completedTasks: { type: integer }
+        progressPercent: { type: integer }
+        currentPhaseId:
+          type: ["string", "null"]
+        currentPhaseTitle:
+          type: ["string", "null"]
+        phaseBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/PhaseProgress"
+      required: [journeyId, totalTasks, completedTasks, progressPercent, currentPhaseId, currentPhaseTitle, phaseBreakdown]
+
+    PhaseProgress:
+      type: object
+      properties:
+        phaseId: { type: string }
+        title: { type: string }
+        totalTasks: { type: integer }
+        completedTasks: { type: integer }
+        progressPercent: { type: integer }
+      required: [phaseId, title, totalTasks, completedTasks, progressPercent]
+
+    ActivityEvent:
+      type: object
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [task_completed, task_uncompleted, task_added, coach_reply]
+        title: { type: string }
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, type, title, timestamp]
+
+    DashboardOverview:
+      type: object
+      properties:
+        totalJourneys: { type: integer }
+        activeJourneys: { type: integer }
+        completedJourneys: { type: integer }
+        totalTasks: { type: integer }
+        completedTasks: { type: integer }
+        currentStreak: { type: integer }
+      required: [totalJourneys, activeJourneys, completedJourneys, totalTasks, completedTasks, currentStreak]
+
+    CreateJourneyBody:
+      type: object
+      properties:
+        goalText:
+          type: string
+          minLength: 4
+        timeline:
+          type: ["string", "null"]
+          description: Optional desired timeframe (e.g. "3 months", "1 year")
+        experienceLevel:
+          type: ["string", "null"]
+          enum: [beginner, intermediate, advanced, null]
+      required: [goalText]
+
+    UpdateJourneyBody:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/JourneyStatus"
+
+    CreateTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+      required: [title]
+
+    UpdateTaskBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        isCompleted:
+          type: boolean
+
+    CoachMessage:
+      type: object
+      properties:
+        id: { type: string }
+        journeyId: { type: string }
+        role:
+          type: string
+          enum: [user, coach]
+        content: { type: string }
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, journeyId, role, content, createdAt]
+
+    SendCoachMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+      required: [content]
+
+    CoachReply:
+      type: object
+      properties:
+        userMessage:
+          $ref: "#/components/schemas/CoachMessage"
+        coachMessage:
+          $ref: "#/components/schemas/CoachMessage"
+      required: [userMessage, coachMessage]

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Journey AI"
+version = "1.0.0"
+id = "artifacts/journey-ai"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22349
+
+[services.development]
+run = "pnpm --filter @workspace/journey-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/journey-ai", "run", "build" ]
+publicDir = "artifacts/journey-ai/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22349"
+BASE_PATH = "/"

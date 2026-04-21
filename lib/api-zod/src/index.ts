@@ -1,2 +1,19 @@
 export * from "./generated/api";
-export * from "./generated/types";
+export type {
+  ActivityEvent,
+  ActivityEventType,
+  ApiError,
+  CoachMessage,
+  CoachMessageRole,
+  CoachReply,
+  CreateJourneyBodyExperienceLevel,
+  DashboardOverview,
+  HealthStatus,
+  Journey,
+  JourneyProgress,
+  JourneyStatus,
+  JourneySummary,
+  Phase,
+  PhaseProgress,
+  Task,
+} from "./generated/types";
