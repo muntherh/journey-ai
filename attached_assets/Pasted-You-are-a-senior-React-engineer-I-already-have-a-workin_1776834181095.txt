@@ -1,0 +1,217 @@
+You are a senior React engineer.
+
+I already have a working Journey AI app built with:
+- React
+- Claude API
+- Phases system
+- Task checklist
+- YouTube video fetch system
+
+IMPORTANT:
+DO NOT rewrite the entire app.
+DO NOT remove existing features.
+ONLY extend functionality.
+
+━━━━━━━━━━━━━━━━━━
+🎯 GOAL
+━━━━━━━━━━━━━━━━━━
+
+Add a FULLY EDITABLE TASK SYSTEM inside each phase.
+
+Users must be able to:
+- Add new steps
+- Edit steps
+- Add YouTube video manually (via link)
+- Add notes
+- Keep progress tracking
+
+━━━━━━━━━━━━━━━━━━
+🧩 TASK STRUCTURE (REQUIRED CHANGE)
+━━━━━━━━━━━━━━━━━━
+
+Currently tasks are strings.
+
+Convert them into objects:
+
+{
+  id: unique_id,
+  title: string,
+  status: "not_started" | "in_progress" | "completed" | "skipped",
+  systemResource: null,
+  userResource: null,
+  note: ""
+}
+
+━━━━━━━━━━━━━━━━━━
+⚙️ MODIFY parsePhases FUNCTION
+━━━━━━━━━━━━━━━━━━
+
+Replace task parsing logic with:
+
+const getTasks = () => {
+  const m = block.match(/TASKS:\n([\s\S]*?)(?=\nYOUTUBE_SEARCH:)/);
+  if (!m) return [];
+
+  return m[1]
+    .split("\n")
+    .filter(l => l.trim().startsWith("-"))
+    .map((l, i) => ({
+      id: Date.now() + i,
+      title: l.replace(/^-+\s*/, "").trim(),
+      status: "not_started",
+      systemResource: null,
+      userResource: null,
+      note: ""
+    }));
+};
+
+━━━━━━━━━━━━━━━━━━
+➕ ADD NEW FUNCTIONS
+━━━━━━━━━━━━━━━━━━
+
+Add these functions inside main component:
+
+function addTask(phaseNumber, title) {
+  setPhases(prev =>
+    prev.map(p =>
+      p.number === phaseNumber
+        ? {
+            ...p,
+            tasks: [
+              ...p.tasks,
+              {
+                id: Date.now(),
+                title,
+                status: "not_started",
+                systemResource: null,
+                userResource: null,
+                note: ""
+              }
+            ]
+          }
+        : p
+    )
+  );
+}
+
+function updateTask(phaseNumber, taskId, updates) {
+  setPhases(prev =>
+    prev.map(p =>
+      p.number === phaseNumber
+        ? {
+            ...p,
+            tasks: p.tasks.map(t =>
+              t.id === taskId ? { ...t, ...updates } : t
+            )
+          }
+        : p
+    )
+  );
+}
+
+━━━━━━━━━━━━━━━━━━
+🎨 UPDATE TASK UI (IMPORTANT)
+━━━━━━━━━━━━━━━━━━
+
+Inside PhaseCard component, REPLACE the tasks rendering with:
+
+{phase.tasks.map((task) => (
+  <div key={task.id} style={{ marginBottom: "8px" }}>
+
+    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+
+      <span>
+        {task.status === "completed" ? "[x]" :
+         task.status === "in_progress" ? "[~]" :
+         task.status === "skipped" ? "[!]" : "[ ]"}
+      </span>
+
+      <input
+        value={task.title}
+        onChange={(e) =>
+          updateTask(phase.number, task.id, { title: e.target.value })
+        }
+        style={{ flex: 1 }}
+      />
+
+      <button onClick={() => {
+        const url = prompt("Enter YouTube link:");
+        if (url) updateTask(phase.number, task.id, { userResource: url });
+      }}>
+        🎥
+      </button>
+
+      <button onClick={() => {
+        const note = prompt("Enter note:");
+        if (note) updateTask(phase.number, task.id, { note });
+      }}>
+        📝
+      </button>
+
+      <button onClick={() => {
+        const next =
+          task.status === "not_started" ? "in_progress" :
+          task.status === "in_progress" ? "completed" :
+          task.status === "completed" ? "skipped" :
+          "not_started";
+
+        updateTask(phase.number, task.id, { status: next });
+      }}>
+        🔄
+      </button>
+
+    </div>
+
+    {task.userResource && (
+      <a href={task.userResource} target="_blank" style={{ fontSize: "12px" }}>
+        🎬 Open Video
+      </a>
+    )}
+
+    {task.note && (
+      <div style={{ fontSize: "12px", color: "#888" }}>
+        📝 {task.note}
+      </div>
+    )}
+
+  </div>
+))}
+
+━━━━━━━━━━━━━━━━━━
+➕ ADD "ADD STEP" BUTTON
+━━━━━━━━━━━━━━━━━━
+
+Inside each PhaseCard, ADD this button:
+
+<button onClick={() => {
+  const title = prompt("New task:");
+  if (title) addTask(phase.number, title);
+}}>
+  ➕ Add Step
+</button>
+
+━━━━━━━━━━━━━━━━━━
+⚠️ IMPORTANT RULES
+━━━━━━━━━━━━━━━━━━
+
+- Do NOT break existing UI design
+- Do NOT remove VideoCard component
+- Do NOT remove Claude API logic
+- Keep progress calculation working
+- Keep phases intact
+- Only extend functionality
+
+━━━━━━━━━━━━━━━━━━
+✅ EXPECTED RESULT
+━━━━━━━━━━━━━━━━━━
+
+After implementation, app should support:
+
+✔ Editable tasks  
+✔ Add steps dynamically  
+✔ Add YouTube links manually  
+✔ Add notes per task  
+✔ Status tracking still works  
+✔ Existing AI system unchanged  
+
+Return updated code sections only.

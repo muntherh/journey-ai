@@ -22,6 +22,15 @@ export const JourneyStatus = {
   archived: "archived",
 } as const;
 
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
+
+export const TaskStatus = {
+  not_started: "not_started",
+  in_progress: "in_progress",
+  completed: "completed",
+  skipped: "skipped",
+} as const;
+
 export interface Task {
   id: string;
   phaseId: string;
@@ -29,6 +38,10 @@ export interface Task {
   title: string;
   description: string;
   isCompleted: boolean;
+  status: TaskStatus;
+  /** @nullable */
+  userResource: string | null;
+  note: string;
   /** @nullable */
   completedAt: string | null;
 }
@@ -153,6 +166,10 @@ export interface UpdateTaskBody {
   title?: string;
   description?: string;
   isCompleted?: boolean;
+  status?: TaskStatus;
+  /** @nullable */
+  userResource?: string | null;
+  note?: string;
 }
 
 export type CoachMessageRole =

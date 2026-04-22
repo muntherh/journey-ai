@@ -13,6 +13,13 @@ export function serializeTask(t: TaskRow) {
     title: t.title,
     description: t.description,
     isCompleted: t.isCompleted,
+    status: (t.status ?? "not_started") as
+      | "not_started"
+      | "in_progress"
+      | "completed"
+      | "skipped",
+    userResource: t.userResource ?? null,
+    note: t.note ?? "",
     completedAt: t.completedAt ? t.completedAt.toISOString() : null,
   };
 }

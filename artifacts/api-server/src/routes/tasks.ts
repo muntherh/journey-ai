@@ -26,8 +26,18 @@ router.patch("/tasks/:id", async (req, res): Promise<void> => {
   if (body.data.title !== undefined) updates["title"] = body.data.title;
   if (body.data.description !== undefined)
     updates["description"] = body.data.description;
-  if (body.data.isCompleted !== undefined) {
+  if (body.data.userResource !== undefined)
+    updates["userResource"] = body.data.userResource;
+  if (body.data.note !== undefined) updates["note"] = body.data.note;
+  if (body.data.status !== undefined) {
+    updates["status"] = body.data.status;
+    const completed = body.data.status === "completed";
+    updates["isCompleted"] = completed;
+    updates["completedAt"] = completed ? new Date() : null;
+  }
+  if (body.data.isCompleted !== undefined && body.data.status === undefined) {
     updates["isCompleted"] = body.data.isCompleted;
+    updates["status"] = body.data.isCompleted ? "completed" : "not_started";
     updates["completedAt"] = body.data.isCompleted ? new Date() : null;
   }
   if (Object.keys(updates).length === 0) {

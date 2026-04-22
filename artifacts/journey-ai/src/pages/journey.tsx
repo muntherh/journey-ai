@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, Circle, MoreVertical, Play, Pause, Trash2, Archive, 
   MessageSquare, Plus, Clock, Target, CalendarDays, Activity, ChevronRight,
-  Send, Sparkles, AlertCircle
+  Send, Sparkles, AlertCircle, Youtube, StickyNote, RefreshCw, ExternalLink, X, Pencil
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -367,40 +367,75 @@ function PhaseItem({ phase, journeyId, index, isCurrent, progress }: any) {
   );
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  completed: "Completed",
+  skipped: "Skipped",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  not_started: "bg-muted text-muted-foreground",
+  in_progress: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300",
+  skipped: "bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+};
+
+const NEXT_STATUS: Record<string, "not_started" | "in_progress" | "completed" | "skipped"> = {
+  not_started: "in_progress",
+  in_progress: "completed",
+  completed: "skipped",
+  skipped: "not_started",
+};
+
 function TaskItem({ task, journeyId }: { task: any, journeyId: string }) {
   const queryClient = useQueryClient();
   const updateTask = useUpdateTask();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkValue, setLinkValue] = useState(task.userResource ?? "");
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteValue, setNoteValue] = useState(task.note ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleToggle = (checked: boolean) => {
-    // Optimistic update
+  const status = task.status ?? (task.isCompleted ? "completed" : "not_started");
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getGetJourneyQueryKey(journeyId) });
+    queryClient.invalidateQueries({ queryKey: getGetJourneySummaryQueryKey(journeyId) });
+    queryClient.invalidateQueries({ queryKey: getGetJourneyActivityQueryKey(journeyId) });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardOverviewQueryKey() });
+  };
+
+  const optimisticPatch = (patch: Record<string, unknown>) => {
     queryClient.setQueryData(getGetJourneyQueryKey(journeyId), (old: any) => {
       if (!old) return old;
       return {
         ...old,
         phases: old.phases.map((p: any) => ({
           ...p,
-          tasks: p.tasks.map((t: any) => t.id === task.id ? { ...t, isCompleted: checked } : t)
+          tasks: p.tasks.map((t: any) => t.id === task.id ? { ...t, ...patch } : t)
         }))
       };
     });
+  };
 
+  const handleToggle = (checked: boolean) => {
+    const newStatus = checked ? "completed" : "not_started";
+    optimisticPatch({ isCompleted: checked, status: newStatus });
     updateTask.mutate(
-      { id: task.id, data: { isCompleted: checked } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetJourneyQueryKey(journeyId) });
-          queryClient.invalidateQueries({ queryKey: getGetJourneySummaryQueryKey(journeyId) });
-          queryClient.invalidateQueries({ queryKey: getGetJourneyActivityQueryKey(journeyId) });
-          queryClient.invalidateQueries({ queryKey: getGetDashboardOverviewQueryKey() });
-        },
-        onError: () => {
-          // Revert on error
-          queryClient.invalidateQueries({ queryKey: getGetJourneyQueryKey(journeyId) });
-        }
-      }
+      { id: task.id, data: { status: newStatus } },
+      { onSuccess: invalidate, onError: invalidate }
+    );
+  };
+
+  const handleCycleStatus = () => {
+    const next = NEXT_STATUS[status] ?? "not_started";
+    optimisticPatch({ status: next, isCompleted: next === "completed" });
+    updateTask.mutate(
+      { id: task.id, data: { status: next } },
+      { onSuccess: invalidate, onError: invalidate }
     );
   };
 
@@ -408,47 +443,152 @@ function TaskItem({ task, journeyId }: { task: any, journeyId: string }) {
     if (title !== task.title && title.trim()) {
       updateTask.mutate(
         { id: task.id, data: { title } },
-        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetJourneyQueryKey(journeyId) }) }
+        { onSuccess: invalidate }
       );
     }
     setIsEditing(false);
   };
 
-  if (isEditing) {
-    return (
-      <div className="flex items-center gap-2 p-2 bg-background rounded-md border">
-        <Input 
-          ref={inputRef}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={handleSaveEdit}
-          onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-          className="h-8"
-          autoFocus
-        />
-      </div>
+  const handleSaveLink = () => {
+    const v = linkValue.trim();
+    optimisticPatch({ userResource: v || null });
+    updateTask.mutate(
+      { id: task.id, data: { userResource: v ? v : null } },
+      { onSuccess: invalidate }
     );
-  }
+    setLinkOpen(false);
+  };
+
+  const handleClearLink = () => {
+    setLinkValue("");
+    optimisticPatch({ userResource: null });
+    updateTask.mutate(
+      { id: task.id, data: { userResource: null } },
+      { onSuccess: invalidate }
+    );
+    setLinkOpen(false);
+  };
+
+  const handleSaveNote = () => {
+    optimisticPatch({ note: noteValue });
+    updateTask.mutate(
+      { id: task.id, data: { note: noteValue } },
+      { onSuccess: invalidate }
+    );
+    setNoteOpen(false);
+  };
 
   return (
     <motion.div 
       initial={false}
-      animate={{ opacity: task.isCompleted ? 0.6 : 1 }}
-      className={`group flex items-start gap-3 p-3 rounded-md transition-colors hover:bg-background border border-transparent hover:border-border`}
+      animate={{ opacity: status === "completed" || status === "skipped" ? 0.7 : 1 }}
+      className="group p-3 rounded-md transition-colors hover:bg-background border border-transparent hover:border-border space-y-2"
     >
-      <Checkbox 
-        checked={task.isCompleted} 
-        onCheckedChange={handleToggle}
-        className="mt-0.5"
-      />
-      <div className="flex-1 cursor-pointer" onClick={() => !task.isCompleted && setIsEditing(true)}>
-        <p className={`text-sm font-medium ${task.isCompleted ? 'line-through text-muted-foreground' : ''}`}>
-          {task.title}
-        </p>
-        {task.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
-        )}
+      <div className="flex items-start gap-3">
+        <Checkbox 
+          checked={status === "completed"}
+          onCheckedChange={handleToggle}
+          className="mt-0.5"
+        />
+        <div className="flex-1 min-w-0">
+          {isEditing ? (
+            <Input
+              ref={inputRef}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={handleSaveEdit}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+              className="h-8"
+              autoFocus
+            />
+          ) : (
+            <div className="cursor-pointer" onClick={() => setIsEditing(true)}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className={`text-sm font-medium ${status === "completed" ? 'line-through text-muted-foreground' : ''} ${status === "skipped" ? 'text-muted-foreground italic' : ''}`}>
+                  {task.title}
+                </p>
+                <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${STATUS_BADGE[status]}`}>
+                  {STATUS_LABEL[status]}
+                </span>
+              </div>
+              {task.description && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="Cycle status" onClick={handleCycleStatus}>
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className={`h-7 w-7 ${task.userResource ? "text-red-500" : ""}`} title="Add YouTube link" onClick={() => { setLinkValue(task.userResource ?? ""); setLinkOpen(true); }}>
+            <Youtube className="h-3.5 w-3.5" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className={`h-7 w-7 ${task.note ? "text-amber-500" : ""}`} title="Add note" onClick={() => { setNoteValue(task.note ?? ""); setNoteOpen(true); }}>
+            <StickyNote className="h-3.5 w-3.5" />
+          </Button>
+          <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => setIsEditing(true)}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
+
+      {task.userResource && (
+        <a href={task.userResource} target="_blank" rel="noreferrer" className="ml-8 inline-flex items-center gap-1.5 text-xs text-primary hover:underline">
+          <Youtube className="h-3 w-3" /> Open video <ExternalLink className="h-3 w-3" />
+        </a>
+      )}
+
+      {task.note && (
+        <div className="ml-8 text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40 rounded p-2 flex gap-2">
+          <StickyNote className="h-3 w-3 mt-0.5 shrink-0 text-amber-600" />
+          <span className="whitespace-pre-wrap">{task.note}</span>
+        </div>
+      )}
+
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Attach a video</DialogTitle>
+            <DialogDescription>Paste a YouTube URL to learn this step.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={linkValue}
+            onChange={(e) => setLinkValue(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            autoFocus
+          />
+          <DialogFooter>
+            {task.userResource && (
+              <Button variant="outline" onClick={handleClearLink}>
+                <X className="h-4 w-4 mr-1" /> Remove
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => setLinkOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveLink}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Note</DialogTitle>
+            <DialogDescription>Capture context, links, or reminders for this step.</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={noteValue}
+            onChange={(e) => setNoteValue(e.target.value)}
+            placeholder="Type a note..."
+            rows={5}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNoteOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveNote}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

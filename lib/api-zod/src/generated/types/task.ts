@@ -5,6 +5,7 @@
  * Journey AI API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { TaskStatus } from "./taskStatus";
 
 export interface Task {
   id: string;
@@ -13,6 +14,10 @@ export interface Task {
   title: string;
   description: string;
   isCompleted: boolean;
+  status: TaskStatus;
+  /** @nullable */
+  userResource: string | null;
+  note: string;
   /** @nullable */
   completedAt: Date | null;
 }

@@ -25,5 +25,6 @@ export * from "./phase";
 export * from "./phaseProgress";
 export * from "./sendCoachMessageBody";
 export * from "./task";
+export * from "./taskStatus";
 export * from "./updateJourneyBody";
 export * from "./updateTaskBody";

@@ -82,6 +82,14 @@ export const GetJourneyResponse = zod.object({
           title: zod.string(),
           description: zod.string(),
           isCompleted: zod.boolean(),
+          status: zod.enum([
+            "not_started",
+            "in_progress",
+            "completed",
+            "skipped",
+          ]),
+          userResource: zod.string().nullable(),
+          note: zod.string(),
           completedAt: zod.coerce.date().nullable(),
         }),
       ),
@@ -125,6 +133,14 @@ export const UpdateJourneyResponse = zod.object({
           title: zod.string(),
           description: zod.string(),
           isCompleted: zod.boolean(),
+          status: zod.enum([
+            "not_started",
+            "in_progress",
+            "completed",
+            "skipped",
+          ]),
+          userResource: zod.string().nullable(),
+          note: zod.string(),
           completedAt: zod.coerce.date().nullable(),
         }),
       ),
@@ -209,6 +225,11 @@ export const UpdateTaskBody = zod.object({
   title: zod.string().optional(),
   description: zod.string().optional(),
   isCompleted: zod.boolean().optional(),
+  status: zod
+    .enum(["not_started", "in_progress", "completed", "skipped"])
+    .optional(),
+  userResource: zod.string().nullish(),
+  note: zod.string().optional(),
 });
 
 export const UpdateTaskResponse = zod.object({
@@ -218,6 +239,9 @@ export const UpdateTaskResponse = zod.object({
   title: zod.string(),
   description: zod.string(),
   isCompleted: zod.boolean(),
+  status: zod.enum(["not_started", "in_progress", "completed", "skipped"]),
+  userResource: zod.string().nullable(),
+  note: zod.string(),
   completedAt: zod.coerce.date().nullable(),
 });
 

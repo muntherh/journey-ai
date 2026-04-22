@@ -5,9 +5,14 @@
  * Journey AI API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { TaskStatus } from "./taskStatus";
 
 export interface UpdateTaskBody {
   title?: string;
   description?: string;
   isCompleted?: boolean;
+  status?: TaskStatus;
+  /** @nullable */
+  userResource?: string | null;
+  note?: string;
 }

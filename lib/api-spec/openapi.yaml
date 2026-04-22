@@ -290,6 +290,10 @@ components:
       type: string
       enum: [active, paused, completed, archived]
 
+    TaskStatus:
+      type: string
+      enum: [not_started, in_progress, completed, skipped]
+
     Task:
       type: object
       properties:
@@ -299,10 +303,15 @@ components:
         title: { type: string }
         description: { type: string }
         isCompleted: { type: boolean }
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        userResource:
+          type: ["string", "null"]
+        note: { type: string }
         completedAt:
           type: ["string", "null"]
           format: date-time
-      required: [id, phaseId, orderIndex, title, description, isCompleted, completedAt]
+      required: [id, phaseId, orderIndex, title, description, isCompleted, status, userResource, note, completedAt]
 
     Phase:
       type: object
@@ -450,6 +459,12 @@ components:
           type: string
         isCompleted:
           type: boolean
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        userResource:
+          type: ["string", "null"]
+        note:
+          type: string
 
     CoachMessage:
       type: object
