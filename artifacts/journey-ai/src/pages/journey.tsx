@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, Circle, MoreVertical, Play, Pause, Trash2, Archive, 
   MessageSquare, Plus, Clock, Target, CalendarDays, Activity, ChevronRight,
-  Send, Sparkles, AlertCircle, Youtube, StickyNote, RefreshCw, ExternalLink, X, Pencil
+  Send, Sparkles, AlertCircle, Youtube, StickyNote, RefreshCw, ExternalLink, X, Pencil, Paperclip, FileText, Image as ImageIcon, File as FileIcon, Loader2
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -397,7 +397,10 @@ function TaskItem({ task, journeyId }: { task: any, journeyId: string }) {
   const [linkValue, setLinkValue] = useState(task.userResource ?? "");
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteValue, setNoteValue] = useState(task.note ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const status = task.status ?? (task.isCompleted ? "completed" : "not_started");
 
@@ -478,6 +481,65 @@ function TaskItem({ task, journeyId }: { task: any, journeyId: string }) {
     setNoteOpen(false);
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const reqRes = await fetch(`${import.meta.env.BASE_URL}api/storage/uploads/request-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          size: file.size,
+          contentType: file.type || "application/octet-stream",
+        }),
+      });
+      if (!reqRes.ok) throw new Error("Failed to get upload URL");
+      const { uploadURL, objectPath } = await reqRes.json();
+      const putRes = await fetch(uploadURL, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      if (!putRes.ok) throw new Error("Upload failed");
+      const data = {
+        attachmentUrl: objectPath,
+        attachmentName: file.name,
+        attachmentType: file.type || "application/octet-stream",
+      };
+      optimisticPatch(data);
+      updateTask.mutate(
+        { id: task.id, data },
+        { onSuccess: invalidate }
+      );
+    } catch (err: any) {
+      setUploadError(err?.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    const data = { attachmentUrl: null, attachmentName: null, attachmentType: null };
+    optimisticPatch(data);
+    updateTask.mutate(
+      { id: task.id, data },
+      { onSuccess: invalidate }
+    );
+  };
+
+  const fileHref = task.attachmentUrl
+    ? `${import.meta.env.BASE_URL}api/storage${task.attachmentUrl}`
+    : null;
+  const FileTypeIcon = task.attachmentType?.startsWith("image/")
+    ? ImageIcon
+    : task.attachmentType === "application/pdf"
+    ? FileText
+    : FileIcon;
+
   return (
     <motion.div 
       initial={false}
@@ -527,6 +589,16 @@ function TaskItem({ task, journeyId }: { task: any, journeyId: string }) {
           <Button type="button" variant="ghost" size="icon" className={`h-7 w-7 ${task.note ? "text-amber-500" : ""}`} title="Add note" onClick={() => { setNoteValue(task.note ?? ""); setNoteOpen(true); }}>
             <StickyNote className="h-3.5 w-3.5" />
           </Button>
+          <Button type="button" variant="ghost" size="icon" className={`h-7 w-7 ${task.attachmentUrl ? "text-blue-500" : ""}`} title="Attach file" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,.md,image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
           <Button type="button" variant="ghost" size="icon" className="h-7 w-7" title="Edit" onClick={() => setIsEditing(true)}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -544,6 +616,22 @@ function TaskItem({ task, journeyId }: { task: any, journeyId: string }) {
           <StickyNote className="h-3 w-3 mt-0.5 shrink-0 text-amber-600" />
           <span className="whitespace-pre-wrap">{task.note}</span>
         </div>
+      )}
+
+      {task.attachmentUrl && fileHref && (
+        <div className="ml-8 flex items-center gap-2 text-xs bg-blue-50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/40 rounded p-2">
+          <FileTypeIcon className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+          <a href={fileHref} target="_blank" rel="noreferrer" className="text-blue-700 dark:text-blue-300 hover:underline truncate flex-1">
+            {task.attachmentName ?? "Attachment"}
+          </a>
+          <button type="button" onClick={handleRemoveFile} className="text-muted-foreground hover:text-destructive shrink-0" title="Remove file">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
+      {uploadError && (
+        <div className="ml-8 text-xs text-destructive">{uploadError}</div>
       )}
 
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>

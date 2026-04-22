@@ -19,5 +19,11 @@ export interface Task {
   userResource: string | null;
   note: string;
   /** @nullable */
+  attachmentUrl: string | null;
+  /** @nullable */
+  attachmentName: string | null;
+  /** @nullable */
+  attachmentType: string | null;
+  /** @nullable */
   completedAt: Date | null;
 }

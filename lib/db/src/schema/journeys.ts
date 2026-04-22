@@ -36,6 +36,9 @@ export const tasksTable = pgTable("tasks", {
   status: text("status").notNull().default("not_started"),
   userResource: text("user_resource"),
   note: text("note").notNull().default(""),
+  attachmentUrl: text("attachment_url"),
+  attachmentName: text("attachment_name"),
+  attachmentType: text("attachment_type"),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

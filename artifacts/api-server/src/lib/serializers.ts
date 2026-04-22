@@ -20,6 +20,9 @@ export function serializeTask(t: TaskRow) {
       | "skipped",
     userResource: t.userResource ?? null,
     note: t.note ?? "",
+    attachmentUrl: t.attachmentUrl ?? null,
+    attachmentName: t.attachmentName ?? null,
+    attachmentType: t.attachmentType ?? null,
     completedAt: t.completedAt ? t.completedAt.toISOString() : null,
   };
 }

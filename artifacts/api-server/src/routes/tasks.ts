@@ -29,6 +29,12 @@ router.patch("/tasks/:id", async (req, res): Promise<void> => {
   if (body.data.userResource !== undefined)
     updates["userResource"] = body.data.userResource;
   if (body.data.note !== undefined) updates["note"] = body.data.note;
+  if (body.data.attachmentUrl !== undefined)
+    updates["attachmentUrl"] = body.data.attachmentUrl;
+  if (body.data.attachmentName !== undefined)
+    updates["attachmentName"] = body.data.attachmentName;
+  if (body.data.attachmentType !== undefined)
+    updates["attachmentType"] = body.data.attachmentType;
   if (body.data.status !== undefined) {
     updates["status"] = body.data.status;
     const completed = body.data.status === "completed";

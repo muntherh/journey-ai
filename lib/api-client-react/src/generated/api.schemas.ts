@@ -13,6 +13,25 @@ export interface ApiError {
   error: string;
 }
 
+export interface ErrorEnvelope {
+  error: string;
+}
+
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
 export type JourneyStatus = (typeof JourneyStatus)[keyof typeof JourneyStatus];
 
 export const JourneyStatus = {
@@ -42,6 +61,12 @@ export interface Task {
   /** @nullable */
   userResource: string | null;
   note: string;
+  /** @nullable */
+  attachmentUrl: string | null;
+  /** @nullable */
+  attachmentName: string | null;
+  /** @nullable */
+  attachmentType: string | null;
   /** @nullable */
   completedAt: string | null;
 }
@@ -170,6 +195,12 @@ export interface UpdateTaskBody {
   /** @nullable */
   userResource?: string | null;
   note?: string;
+  /** @nullable */
+  attachmentUrl?: string | null;
+  /** @nullable */
+  attachmentName?: string | null;
+  /** @nullable */
+  attachmentType?: string | null;
 }
 
 export type CoachMessageRole =

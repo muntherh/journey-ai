@@ -8,6 +8,42 @@
 import * as zod from "zod";
 
 /**
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1),
+  size: zod.number().min(1),
+  contentType: zod.string().min(1),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url(),
+  objectPath: zod.string(),
+  metadata: zod
+    .object({
+      name: zod.string().min(1),
+      size: zod.number().min(1),
+      contentType: zod.string().min(1),
+    })
+    .optional(),
+});
+
+/**
+ * @summary Serve a public asset
+ */
+export const GetPublicObjectParams = zod.object({
+  filePath: zod.coerce.string(),
+});
+
+/**
+ * @summary Serve an uploaded object entity
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce.string(),
+});
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -90,6 +126,9 @@ export const GetJourneyResponse = zod.object({
           ]),
           userResource: zod.string().nullable(),
           note: zod.string(),
+          attachmentUrl: zod.string().nullable(),
+          attachmentName: zod.string().nullable(),
+          attachmentType: zod.string().nullable(),
           completedAt: zod.coerce.date().nullable(),
         }),
       ),
@@ -141,6 +180,9 @@ export const UpdateJourneyResponse = zod.object({
           ]),
           userResource: zod.string().nullable(),
           note: zod.string(),
+          attachmentUrl: zod.string().nullable(),
+          attachmentName: zod.string().nullable(),
+          attachmentType: zod.string().nullable(),
           completedAt: zod.coerce.date().nullable(),
         }),
       ),
@@ -230,6 +272,9 @@ export const UpdateTaskBody = zod.object({
     .optional(),
   userResource: zod.string().nullish(),
   note: zod.string().optional(),
+  attachmentUrl: zod.string().nullish(),
+  attachmentName: zod.string().nullish(),
+  attachmentType: zod.string().nullish(),
 });
 
 export const UpdateTaskResponse = zod.object({
@@ -242,6 +287,9 @@ export const UpdateTaskResponse = zod.object({
   status: zod.enum(["not_started", "in_progress", "completed", "skipped"]),
   userResource: zod.string().nullable(),
   note: zod.string(),
+  attachmentUrl: zod.string().nullable(),
+  attachmentName: zod.string().nullable(),
+  attachmentType: zod.string().nullable(),
   completedAt: zod.coerce.date().nullable(),
 });
 
