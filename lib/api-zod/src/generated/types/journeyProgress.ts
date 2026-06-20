@@ -16,5 +16,7 @@ export interface JourneyProgress {
   currentPhaseId: string | null;
   /** @nullable */
   currentPhaseTitle: string | null;
+  /** @nullable */
+  nextTaskTitle: string | null;
   phaseBreakdown: PhaseProgress[];
 }

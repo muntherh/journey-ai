@@ -1,8 +1,15 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Compass, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
+  const isShare = location.startsWith("/share/");
+
+  if (isShare) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -15,6 +22,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <nav className="hidden md:flex gap-4">
               <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 Dashboard
+              </Link>
+              <Link href="/new" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                New Journey
               </Link>
             </nav>
           </div>

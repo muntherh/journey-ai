@@ -1,0 +1,66 @@
+I have a "Journey AI" app that generates AI-powered learning roadmaps. I need you to add 3 features:
+
+---
+
+## Feature 1: Landing Page (before login)
+
+Create a beautiful landing page at the root route "/" that shows when the user is NOT logged in. It should explain what Journey AI does and have a clear CTA button to get started. The logged-in homepage (goal input form) moves to "/new" or stays after auth. The landing page should highlight:
+
+- The main value prop: "Turn any goal into a structured, step-by-step journey"
+
+- 3 key features: AI-generated roadmap, progress tracking, weekly adaptation
+
+- Example journeys (e.g. "Learn Spanish in 3 months", "Build a SaaS MVP")
+
+- A "Get Started" button
+
+---
+
+## Feature 2: AI Weekly Check-in
+
+Add a "Weekly Check-in" button inside each Journey card on the dashboard and on the journey detail page.
+
+When clicked, open a modal where the user:
+
+1. Writes what they accomplished this week (textarea)
+
+2. Rates their progress (1-5 scale)
+
+3. Mentions any blockers
+
+After submitting, call the AI with the journey plan + user's check-in to:
+
+- Analyze progress
+
+- Give encouragement or adjustment advice
+
+- Suggest if any tasks need to be reprioritized
+
+Display the AI response in the modal as a "Coach Feedback" section.
+
+Store the check-in history (date + user input + AI response) so the user can see past check-ins on the journey detail page.
+
+---
+
+## Feature 3: Export & Share Plan
+
+Add an "Export" button on each journey detail page with two options:
+
+1. **Copy shareable link** — generate a public read-only URL for the journey plan (e.g. /share/[journeyId]) that anyone can view without logging in
+
+2. **Download as PDF** — export the full journey plan (title, description, all tasks with weeks) as a clean PDF
+
+For the PDF, use a library like `jsPDF` or `react-pdf`. Keep the styling clean and minimal.
+
+---
+
+## Important:
+
+- Keep the existing design system and color palette
+
+- All new UI should match the current teal/green accent colors and clean aesthetic
+
+- The check-in feature should feel like talking to a coach, not a chatbot
+
+- Do not break any existing functionality
+ 

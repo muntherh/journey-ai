@@ -301,6 +301,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/Task"
 
+  /journeys/{id}/checkins:
+    get:
+      operationId: listCheckIns
+      tags: [journeys]
+      summary: List weekly check-ins for a journey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Check-in list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CheckIn"
+    post:
+      operationId: createCheckIn
+      tags: [journeys]
+      summary: Submit a weekly check-in and receive AI coach feedback
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckInBody"
+      responses:
+        "201":
+          description: Check-in saved with AI feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckIn"
+
   /journeys/{id}/coach/messages:
     get:
       operationId: listCoachMessages
@@ -492,11 +534,13 @@ components:
           type: ["string", "null"]
         currentPhaseTitle:
           type: ["string", "null"]
+        nextTaskTitle:
+          type: ["string", "null"]
         phaseBreakdown:
           type: array
           items:
             $ref: "#/components/schemas/PhaseProgress"
-      required: [journeyId, totalTasks, completedTasks, progressPercent, currentPhaseId, currentPhaseTitle, phaseBreakdown]
+      required: [journeyId, totalTasks, completedTasks, progressPercent, currentPhaseId, currentPhaseTitle, nextTaskTitle, phaseBreakdown]
 
     PhaseProgress:
       type: object
@@ -585,6 +629,32 @@ components:
           type: ["string", "null"]
         attachmentType:
           type: ["string", "null"]
+
+    CheckIn:
+      type: object
+      properties:
+        id: { type: string }
+        journeyId: { type: string }
+        accomplished: { type: string }
+        rating: { type: integer }
+        blockers: { type: string }
+        aiFeedback: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, journeyId, accomplished, rating, blockers, aiFeedback, createdAt]
+
+    CreateCheckInBody:
+      type: object
+      properties:
+        accomplished:
+          type: string
+          minLength: 1
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        blockers:
+          type: string
+      required: [accomplished, rating]
 
     CoachMessage:
       type: object

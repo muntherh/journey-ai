@@ -19,8 +19,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, Circle, MoreVertical, Play, Pause, Trash2, Archive, 
   MessageSquare, Plus, Clock, Target, CalendarDays, Activity, ChevronRight,
-  Send, Sparkles, AlertCircle, Youtube, StickyNote, RefreshCw, ExternalLink, X, Pencil, Paperclip, FileText, Image as ImageIcon, File as FileIcon, Loader2
+  Send, Sparkles, AlertCircle, Youtube, StickyNote, RefreshCw, ExternalLink, X, Pencil, Paperclip, FileText, Image as ImageIcon, File as FileIcon, Loader2,
+  CalendarCheck, Download, Link2, Share2
 } from "lucide-react";
+import CheckinModal from "@/components/CheckinModal";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -52,6 +54,124 @@ export default function JourneyDetail() {
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+
+  const handleCopyShareLink = () => {
+    const origin = window.location.origin;
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+    navigator.clipboard.writeText(`${origin}${base}/share/${id}`);
+    setCopyDone(true);
+    setTimeout(() => setCopyDone(false), 2000);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!journey) return;
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const margin = 18;
+    const contentW = pageW - margin * 2;
+    let y = margin;
+
+    const addWrapped = (text: string, x: number, yPos: number, maxW: number, size: number, style: "normal" | "bold" = "normal") => {
+      doc.setFontSize(size);
+      doc.setFont("helvetica", style);
+      const lines = doc.splitTextToSize(text, maxW);
+      doc.text(lines, x, yPos);
+      return yPos + lines.length * (size * 0.4);
+    };
+
+    const checkPage = (needed: number) => {
+      if (y + needed > doc.internal.pageSize.getHeight() - margin) {
+        doc.addPage();
+        y = margin;
+      }
+    };
+
+    doc.setFillColor(20, 184, 166);
+    doc.rect(0, 0, pageW, 36, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    const titleLines = doc.splitTextToSize(journey.title, contentW);
+    doc.text(titleLines, margin, 16);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Journey AI  ·  ${format(new Date(journey.createdAt), "MMM d, yyyy")}`, margin, 30);
+    y = 46;
+
+    doc.setTextColor(60, 60, 60);
+    if (journey.summary) {
+      y = addWrapped(journey.summary, margin, y, contentW, 10) + 6;
+    }
+
+    const allTasks = journey.phases.flatMap((p) => p.tasks);
+    const done = allTasks.filter((t) => t.isCompleted).length;
+    const pct = allTasks.length === 0 ? 0 : Math.round((done / allTasks.length) * 100);
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Progress: ${pct}%  ·  ${done}/${allTasks.length} tasks completed  ·  Status: ${journey.status}`, margin, y);
+    y += 10;
+
+    doc.setDrawColor(220, 220, 220);
+    doc.line(margin, y, pageW - margin, y);
+    y += 8;
+
+    const sortedPhases = journey.phases.slice().sort((a, b) => a.orderIndex - b.orderIndex);
+    for (let pi = 0; pi < sortedPhases.length; pi++) {
+      const phase = sortedPhases[pi];
+      checkPage(20);
+
+      doc.setFillColor(240, 253, 250);
+      doc.setDrawColor(167, 243, 208);
+      doc.roundedRect(margin, y - 4, contentW, 14, 2, 2, "FD");
+      doc.setTextColor(20, 90, 75);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Phase ${pi + 1}: ${phase.title}`, margin + 4, y + 5);
+      y += 16;
+
+      if (phase.description) {
+        doc.setTextColor(80, 80, 80);
+        y = addWrapped(phase.description, margin, y, contentW, 9) + 4;
+      }
+
+      const tasks = phase.tasks.slice().sort((a, b) => a.orderIndex - b.orderIndex);
+      for (const task of tasks) {
+        checkPage(10);
+        const checkX = margin + 3;
+        const textX = margin + 12;
+        if (task.isCompleted) {
+          doc.setFillColor(16, 185, 129);
+          doc.circle(checkX, y - 1, 2.5, "F");
+          doc.setTextColor(130, 130, 130);
+        } else {
+          doc.setDrawColor(160, 160, 160);
+          doc.circle(checkX, y - 1, 2.5, "D");
+          doc.setTextColor(40, 40, 40);
+        }
+        doc.setFontSize(9);
+        doc.setFont("helvetica", task.isCompleted ? "normal" : "normal");
+        const taskLines = doc.splitTextToSize(task.title, contentW - 14);
+        doc.text(taskLines, textX, y);
+        y += taskLines.length * 5 + 3;
+        if (task.description) {
+          doc.setTextColor(120, 120, 120);
+          doc.setFontSize(8);
+          const descLines = doc.splitTextToSize(task.description, contentW - 16);
+          doc.text(descLines, textX, y);
+          y += descLines.length * 4 + 2;
+        }
+      }
+      y += 6;
+    }
+
+    doc.setFontSize(7);
+    doc.setTextColor(160, 160, 160);
+    doc.text("Generated by Journey AI", margin, doc.internal.pageSize.getHeight() - 8);
+    doc.save(`${journey.title.replace(/[^a-z0-9]/gi, "-").toLowerCase()}.pdf`);
+  };
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getGetJourneyQueryKey(id) });
@@ -186,6 +306,52 @@ export default function JourneyDetail() {
 
       {/* Sidebar - Right Column */}
       <div className="space-y-6">
+        {/* Weekly Check-in Card */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CalendarCheck className="h-5 w-5 text-primary" />
+              Weekly Check-in
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Reflect on your week, rate your progress, and get personalized coach feedback.
+            </p>
+            <Button className="w-full" onClick={() => setCheckinOpen(true)}>
+              Start Check-in
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Export Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Share2 className="h-5 w-5" />
+              Export & Share
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 text-sm"
+              onClick={handleCopyShareLink}
+            >
+              <Link2 className="h-4 w-4 shrink-0" />
+              {copyDone ? "Link copied!" : "Copy shareable link"}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 text-sm"
+              onClick={handleDownloadPdf}
+            >
+              <Download className="h-4 w-4 shrink-0" />
+              Download as PDF
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Coach Widget */}
         <Card className="border-primary/20 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
@@ -265,6 +431,13 @@ export default function JourneyDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <CheckinModal
+        journeyId={id}
+        journeyTitle={journey.title}
+        open={checkinOpen}
+        onOpenChange={setCheckinOpen}
+      />
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -716,7 +889,7 @@ function CoachChat({ journeyId }: { journeyId: string }) {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-background rounded-xl border">
-      <ScrollArea className="flex-1 p-4" viewportRef={scrollRef}>
+      <ScrollArea className="flex-1 p-4">
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-16 w-3/4 rounded-xl rounded-tl-sm" />

@@ -211,6 +211,7 @@ export const GetJourneySummaryResponse = zod.object({
   progressPercent: zod.number(),
   currentPhaseId: zod.string().nullable(),
   currentPhaseTitle: zod.string().nullable(),
+  nextTaskTitle: zod.string().nullable(),
   phaseBreakdown: zod.array(
     zod.object({
       phaseId: zod.string(),
@@ -303,6 +304,39 @@ export const CreateTaskParams = zod.object({
 export const CreateTaskBody = zod.object({
   title: zod.string().min(1),
   description: zod.string().optional(),
+});
+
+/**
+ * @summary List weekly check-ins for a journey
+ */
+export const ListCheckInsParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ListCheckInsResponseItem = zod.object({
+  id: zod.string(),
+  journeyId: zod.string(),
+  accomplished: zod.string(),
+  rating: zod.number(),
+  blockers: zod.string(),
+  aiFeedback: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListCheckInsResponse = zod.array(ListCheckInsResponseItem);
+
+/**
+ * @summary Submit a weekly check-in and receive AI coach feedback
+ */
+export const CreateCheckInParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const createCheckInBodyRatingMax = 5;
+
+export const CreateCheckInBody = zod.object({
+  accomplished: zod.string().min(1),
+  rating: zod.number().min(1).max(createCheckInBodyRatingMax),
+  blockers: zod.string().optional(),
 });
 
 /**

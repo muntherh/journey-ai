@@ -137,6 +137,49 @@ export interface CoachContext {
   userMessage: string;
 }
 
+const CHECKIN_SYSTEM_PROMPT = `You are Journey AI's weekly coach. A user just submitted their weekly check-in.
+Be direct, warm, and insightful — like a good mentor, not a chatbot.
+Max 200 words. No emojis. Structure your response in 2-3 short paragraphs:
+1. Acknowledge what they did (specific, not generic)
+2. Address blockers or give encouragement based on their rating
+3. One concrete suggestion for next week`;
+
+export async function generateCheckInFeedback(args: {
+  journeyTitle: string;
+  journeySummary: string;
+  progressPercent: number;
+  accomplished: string;
+  rating: number;
+  blockers: string;
+  upcomingTasks: string[];
+}): Promise<string> {
+  const ratingLabel = ["", "behind", "some progress", "solid", "productive", "exceptional"][args.rating] ?? "";
+  const userBlock = [
+    `Journey: ${args.journeyTitle}`,
+    `Overall progress: ${args.progressPercent}%`,
+    `This week (rated ${args.rating}/5 — ${ratingLabel}):`,
+    `Accomplished: ${args.accomplished}`,
+    args.blockers ? `Blockers: ${args.blockers}` : null,
+    args.upcomingTasks.length
+      ? `Upcoming tasks: ${args.upcomingTasks.join(", ")}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-5.2",
+    max_completion_tokens: 500,
+    messages: [
+      { role: "system", content: CHECKIN_SYSTEM_PROMPT },
+      { role: "user", content: userBlock },
+    ],
+  });
+  const content = response.choices[0]?.message?.content?.trim();
+  if (!content) throw new Error("Empty check-in response");
+  return content;
+}
+
 export async function generateCoachReply(ctx: CoachContext): Promise<string> {
   const stateBlock = [
     `Journey: ${ctx.journeyTitle}`,

@@ -3,6 +3,7 @@ export type {
   ActivityEvent,
   ActivityEventType,
   ApiError,
+  CheckIn,
   CoachMessage,
   CoachMessageRole,
   CoachReply,

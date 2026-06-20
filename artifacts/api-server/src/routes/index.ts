@@ -5,6 +5,7 @@ import tasksRouter from "./tasks";
 import coachRouter from "./coach";
 import dashboardRouter from "./dashboard";
 import storageRouter from "./storage";
+import checkinsRouter from "./checkins";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(tasksRouter);
 router.use(coachRouter);
 router.use(dashboardRouter);
 router.use(storageRouter);
+router.use(checkinsRouter);
 
 export default router;

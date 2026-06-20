@@ -53,7 +53,20 @@ export const coachMessagesTable = pgTable("coach_messages", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const checkInsTable = pgTable("check_ins", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  journeyId: uuid("journey_id")
+    .notNull()
+    .references(() => journeysTable.id, { onDelete: "cascade" }),
+  accomplished: text("accomplished").notNull(),
+  rating: integer("rating").notNull(),
+  blockers: text("blockers").notNull().default(""),
+  aiFeedback: text("ai_feedback").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type Journey = typeof journeysTable.$inferSelect;
 export type Phase = typeof phasesTable.$inferSelect;
 export type Task = typeof tasksTable.$inferSelect;
 export type CoachMessageRow = typeof coachMessagesTable.$inferSelect;
+export type CheckIn = typeof checkInsTable.$inferSelect;

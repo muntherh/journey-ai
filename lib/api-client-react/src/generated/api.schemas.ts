@@ -122,6 +122,8 @@ export interface JourneyProgress {
   currentPhaseId: string | null;
   /** @nullable */
   currentPhaseTitle: string | null;
+  /** @nullable */
+  nextTaskTitle: string | null;
   phaseBreakdown: PhaseProgress[];
 }
 
@@ -201,6 +203,27 @@ export interface UpdateTaskBody {
   attachmentName?: string | null;
   /** @nullable */
   attachmentType?: string | null;
+}
+
+export interface CheckIn {
+  id: string;
+  journeyId: string;
+  accomplished: string;
+  rating: number;
+  blockers: string;
+  aiFeedback: string;
+  createdAt: string;
+}
+
+export interface CreateCheckInBody {
+  /** @minLength 1 */
+  accomplished: string;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  rating: number;
+  blockers?: string;
 }
 
 export type CoachMessageRole =

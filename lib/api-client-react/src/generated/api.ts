@@ -19,8 +19,10 @@ import type {
 import type {
   ActivityEvent,
   ApiError,
+  CheckIn,
   CoachMessage,
   CoachReply,
+  CreateCheckInBody,
   CreateJourneyBody,
   CreateTaskBody,
   DashboardOverview,
@@ -1224,6 +1226,180 @@ export const useCreateTask = <
   TContext
 > => {
   return useMutation(getCreateTaskMutationOptions(options));
+};
+
+/**
+ * @summary List weekly check-ins for a journey
+ */
+export const getListCheckInsUrl = (id: string) => {
+  return `/api/journeys/${id}/checkins`;
+};
+
+export const listCheckIns = async (
+  id: string,
+  options?: RequestInit,
+): Promise<CheckIn[]> => {
+  return customFetch<CheckIn[]>(getListCheckInsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCheckInsQueryKey = (id: string) => {
+  return [`/api/journeys/${id}/checkins`] as const;
+};
+
+export const getListCheckInsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCheckIns>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCheckIns>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCheckInsQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCheckIns>>> = ({
+    signal,
+  }) => listCheckIns(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCheckIns>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCheckInsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCheckIns>>
+>;
+export type ListCheckInsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List weekly check-ins for a journey
+ */
+
+export function useListCheckIns<
+  TData = Awaited<ReturnType<typeof listCheckIns>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listCheckIns>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCheckInsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a weekly check-in and receive AI coach feedback
+ */
+export const getCreateCheckInUrl = (id: string) => {
+  return `/api/journeys/${id}/checkins`;
+};
+
+export const createCheckIn = async (
+  id: string,
+  createCheckInBody: CreateCheckInBody,
+  options?: RequestInit,
+): Promise<CheckIn> => {
+  return customFetch<CheckIn>(getCreateCheckInUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createCheckInBody),
+  });
+};
+
+export const getCreateCheckInMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCheckIn>>,
+    TError,
+    { id: string; data: BodyType<CreateCheckInBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCheckIn>>,
+  TError,
+  { id: string; data: BodyType<CreateCheckInBody> },
+  TContext
+> => {
+  const mutationKey = ["createCheckIn"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCheckIn>>,
+    { id: string; data: BodyType<CreateCheckInBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createCheckIn(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCheckInMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCheckIn>>
+>;
+export type CreateCheckInMutationBody = BodyType<CreateCheckInBody>;
+export type CreateCheckInMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit a weekly check-in and receive AI coach feedback
+ */
+export const useCreateCheckIn = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCheckIn>>,
+    TError,
+    { id: string; data: BodyType<CreateCheckInBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createCheckIn>>,
+  TError,
+  { id: string; data: BodyType<CreateCheckInBody> },
+  TContext
+> => {
+  return useMutation(getCreateCheckInMutationOptions(options));
 };
 
 /**

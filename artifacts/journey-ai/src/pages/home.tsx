@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useCreateJourney } from "@workspace/api-client-react";
-import { CreateJourneyBodyExperienceLevel } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { CreateJourneyBodyExperienceLevel } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
 import { Sparkles, ArrowRight, Clock, Target, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
