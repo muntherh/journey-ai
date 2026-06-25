@@ -46,7 +46,7 @@
 
 ### Home Page
 > *Navigate your career journey with AI*
-screenshots/homepage (copy).jpg
+
 ![Home](https://journey-ai.replit.app)
 
 ### Roadmap Generation
