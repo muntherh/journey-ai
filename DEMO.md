@@ -6,7 +6,7 @@
 |---|---|
 | **Live App** | https://journey-ai.replit.app |
 | **GitHub Repo** | https://github.com/muntherh/journey-ai |
-| **Demo Video** | *(coming soon — final submission)* |||
+| **Demo Video** | https://drive.google.com/file/d/1nMAIaadQcm6oAwGVbYqMw6KDZ_wK0M9A/view?usp=drivesdk|||
 |-|-|
 |||
 
